@@ -1,597 +1,413 @@
-module memoryRom (
-            input clk,
-            input [5:0] addr,
+
+
+module main(
+    input   clock,
+    input   pegarCarta,
+    input   ficarCarta,
+    input   resetar,
+    output wire led1,
+    output wire led2,
+    output wire led3,
+    output  [6:0] PrimeiroDigito,
+    output  [6:0] QuartoDigito,
+    output  [6:0] TerceiroDigitoigito,
+    output  [6:0] SegundoDigito
+);
+
+    wire  [3:0] data;
+    wire  [5:0] endereco;
+    wire [6:0] SomaDasCartasDoJogador;
+    wire [6:0] SomaDasCartasDoDealer;
+    wire BtDbpegarCarta;
+    wire btDbficarCarta;
+    wire btDbresetar;
+
+    debounce debounceInst (
+        .clock(clock),
+        .btEntrada(pegarCarta),
+        .btSaida(BtDbpegarCarta)
+    );
+
+    debounce debounceInst2 (
+        .clock(clock),
+        .btEntrada(ficarCarta),
+        .btSaida(btDbficarCarta)
+    );
+
+    debounce debounceInst3 (
+        .clock(clock),
+        .btEntrada(resetar),
+        .btSaida(btDbresetar)
+    );
+    
+    memoria rom (
+        .clock(clock),
+        .endereco(endereco),
+        .data(data),
+    );
+
+    blackJackestadoMachineModule blackJackestadoMachineInst (
+        .clock(clock),
+        .pegarCarta(BtDbpegarCarta),
+        .ficarCarta(btDbficarCarta),
+        .resetar(btDbresetar),
+        .vitoria(led1),
+        .perda(led2),
+        .empate(led3),
+        .endereco(endereco),
+        .SomaDasCartasDoJogador(SomaDasCartasDoJogador),
+        .SomaDasCartasDoDealer(SomaDasCartasDoDealer),
+        .data(data)
+    );
+
+    DisplayDeSeteSegmentosDecodificador d1 (
+        .data(SomaDasCartasDoJogador),
+        .PrimeiroDigito(PrimeiroDigito),
+        .SegundoDigito(SegundoDigito),
+    );      
+
+    DisplayDeSeteSegmentosDecodificador d2 (
+        .data(SomaDasCartasDoDealer),
+        .PrimeiroDigito(QuartoDigito),
+        .SegundoDigito( TerceiroDigito),
+    );
+endmodule
+
+
+
+module memoria (
+            input clock,
+            input [5:0] endereco,
             output reg [3:0] data,
-            output reg shuffle_ready
+            output reg embaralhamentoPronto
             );
 
-            localparam IDLE = 2'b00, READ = 2'b01, WRITE = 2'b10;
+            localparam Epera = 2'b00, READ = 2'b01, ESCRITA = 2'b10;
 
-            reg [5:0] shuffle_addr = 6'b0;
-            reg [5:0] lfsr = 6'b001011; // lfsr initial state, should be non-zero
-            reg [3:0] memory [0:51];
-            reg [3:0] memory_shuffle_addr, memory_lfsr;
-            reg [1:0] state = IDLE;
-            //assign led = shuffle_complete;
+            reg [5:0] enderecoDeEmbaralhamento = 6'b0;
+            reg [5:0] troca = 6'b001011;
+            reg [3:0] memoria [0:51];
+            reg [3:0] memoria_enderecoDeEmbaralhamento, memoria_Embaralhamento;
+            reg [1:0] estado = Epera;
+        
 				
-            initial begin
-                memory[0] = 4'd1;  // As
-                memory[1] = 4'd2;  // 2
-                memory[2] = 4'd3;  // 3
-                memory[3] = 4'd4;  // 4
-                memory[4] = 4'd5;  // 5
-                memory[5] = 4'd6;  // 6
-                memory[6] = 4'd7;  // 7
-                memory[7] = 4'd8;  // 8
-                memory[8] = 4'd9;  // 9
-                memory[9] = 4'd10; // 10
-                memory[10] = 4'd10; // J
-                memory[11] = 4'd10; // Q
-                memory[12] = 4'd10; // K
-                memory[13] = 4'd1;  // As
-                memory[14] = 4'd2;  // 2
-                memory[15] = 4'd3;  // 3
-                memory[16] = 4'd4;  // 4
-                memory[17] = 4'd5;  // 5
-                memory[18] = 4'd6;  // 6
-                memory[19] = 4'd7;  // 7
-                memory[20] = 4'd8;  // 8
-                memory[21] = 4'd9;  // 9
-                memory[22] = 4'd10; // 10
-                memory[23] = 4'd10; // J
-                memory[24] = 4'd10; // Q
-                memory[25] = 4'd10; // K
-                memory[26] = 4'd1;  // As
-                memory[27] = 4'd2;  // 2
-                memory[28] = 4'd3;  // 3
-                memory[29] = 4'd4;  // 4
-                memory[30] = 4'd5;  // 5
-                memory[31] = 4'd6;  // 6
-                memory[32] = 4'd7;  // 7
-                memory[33] = 4'd8;  // 8
-                memory[34] = 4'd9;  // 9
-                memory[35] = 4'd10; // 10
-                memory[36] = 4'd10; // J
-                memory[37] = 4'd10; // Q
-                memory[38] = 4'd10; // K
-                memory[39] = 4'd1;  // As
-                memory[40] = 4'd2;  // 2
-                memory[41] = 4'd3;  // 3
-                memory[42] = 4'd4;  // 4
-                memory[43] = 4'd5;  // 5
-                memory[44] = 4'd6;  // 6
-                memory[45] = 4'd7;  // 7
-                memory[46] = 4'd8;  // 8
-                memory[47] = 4'd9;  // 9
-                memory[48] = 4'd10; // 10
-                memory[49] = 4'd10; // J
-                memory[50] = 4'd10; // Q
-                memory[51] = 4'd10; // K
-    end
+        initial begin
+            memoria[0] = 4'b0001;
+            memoria[1] = 4'b0010;
+            memoria[2] = 4'b0011;
+            memoria[3] = 4'b0100;
+            memoria[4] = 4'b0101;
+            memoria[5] = 4'b0110;
+            memoria[6] = 4'b0111;
+            memoria[7] = 4'b1000;
+            memoria[8] = 4'b1001;
+            memoria[9] = 4'b1010;
+            memoria[10] = 4'b1010;
+            memoria[11] = 4'b1010;
+            memoria[12] = 4'b1010;
+            memoria[13] = 4'b0001;
+            memoria[14] = 4'b0010;
+            memoria[15] = 4'b0011;
+            memoria[16] = 4'b0100;
+            memoria[17] = 4'b0101;
+            memoria[18] = 4'b0110;
+            memoria[19] = 4'b0111;
+            memoria[20] = 4'b1000;
+            memoria[21] = 4'b1001;
+            memoria[22] = 4'b1010;
+            memoria[23] = 4'b1010;
+            memoria[24] = 4'b1010;
+            memoria[25] = 4'b1010;
+            memoria[26] = 4'b0001;
+            memoria[27] = 4'b0010;
+            memoria[28] = 4'b0011;
+            memoria[29] = 4'b0100;
+            memoria[30] = 4'b0101;
+            memoria[31] = 4'b0110;
+            memoria[32] = 4'b0111;
+            memoria[33] = 4'b1000;
+            memoria[34] = 4'b1001;
+            memoria[35] = 4'b1010;
+            memoria[36] = 4'b1010;
+            memoria[37] = 4'b1010;
+            memoria[38] = 4'b1010;
+            memoria[39] = 4'b0001;
+            memoria[40] = 4'b0010;
+            memoria[41] = 4'b0011;
+            memoria[42] = 4'b0100;
+            memoria[43] = 4'b0101;
+            memoria[44] = 4'b0110;
+            memoria[45] = 4'b0111;
+            memoria[46] = 4'b1000;
+            memoria[47] = 4'b1001;
+            memoria[48] = 4'b1010;
+            memoria[49] = 4'b1010;
+            memoria[50] = 4'b1010;
+            memoria[51] = 4'b1010;
+        end
 
-        always @(posedge clk) begin
-                case(state)
-                    IDLE: begin
-                        shuffle_addr <= shuffle_addr + 1;
-                        if (shuffle_addr == 6'd51) begin
-                            shuffle_addr <= 6'b0;
-                            shuffle_ready <= 1;
+        always @(posedge clock) begin
+                case(estado)
+                    Epera: begin
+                        enderecoDeEmbaralhamento <= enderecoDeEmbaralhamento + 1;
+                        if (enderecoDeEmbaralhamento == 6'd51) begin
+                            enderecoDeEmbaralhamento <= 6'b0;
+                            embaralhamentoPronto <= 1;
                         end else begin
-                            shuffle_ready <= 0;
-                            state <= READ;
+                            embaralhamentoPronto <= 0;
+                            estado <= READ;
                         end
                     end
                     READ: begin
-                        memory_shuffle_addr <= memory[shuffle_addr];
-                        memory_lfsr <= memory[lfsr[5:0]];
-                        state <= WRITE;
+                        memoria_enderecoDeEmbaralhamento <= memoria[enderecoDeEmbaralhamento];
+                        memoria_Embaralhamento <= memoria[troca[5:0]];
+                        estado <= ESCRITA;
                     end
-                    WRITE: begin
-                        memory[shuffle_addr] <= memory_lfsr;
-                        memory[lfsr[5:0]] <= memory_shuffle_addr;
-                        lfsr <= {lfsr[4:0], lfsr[4]^lfsr[4]}; // a simple lfsr implementation
-                        state <= IDLE;
+                    ESCRITA: begin
+                        memoria[enderecoDeEmbaralhamento] <= memoria_Embaralhamento;
+                        memoria[troca[5:0]] <= memoria_enderecoDeEmbaralhamento;
+                        troca <= {troca[4:0], troca[4]^troca[4]};
+                        estado <= Epera;
                     end
                 endcase
             end
 
-    always @(posedge clk) begin
-        data <= memory[addr];
+    always @(posedge clock) begin
+        data <= memoria[endereco];
     end 
 endmodule
 
-module twoSevenSegmentsDisplayModule (
-            input [6:0]data,
-            output reg [6:0] firstDigit,
-            output reg [6:0] secondDigit
-            );
 
-                always @(*) begin
-                    case (data)
-                        6'd0: begin
-                            firstDigit = 7'b1000000;
-                            secondDigit = 7'b1000000;
-                        end
-                        6'd1: begin
-                            firstDigit = 7'b1000000;
-                            secondDigit = 7'b1111001;
-                        end
-                        6'd2: begin
-                            firstDigit = 7'b1000000;
-                            secondDigit = 7'b0100100;
-                        end
-                        6'd3: begin
-                            firstDigit = 7'b1000000;
-                            secondDigit = 7'b0110000;
-                        end
-                        6'd4: begin
-                            firstDigit = 7'b1000000;
-                            secondDigit = 7'b0011001;
-                        end
-                        6'd5: begin
-                            firstDigit = 7'b1000000;
-                            secondDigit = 7'b0010010;
-                        end
-                        6'd6: begin
-                            firstDigit = 7'b1000000;
-                            secondDigit = 7'b0000010;
-                        end
-                        6'd7: begin
-                            firstDigit = 7'b1000000;
-                            secondDigit = 7'b1111000;
-                        end
-                        6'd8: begin
-                            firstDigit = 7'b1000000;
-                            secondDigit = 7'b0000000;
-                        end
-                        6'd9: begin
-                            firstDigit = 7'b1000000;
-                            secondDigit = 7'b0010000;
-                        end
-                        6'd10: begin
-                            firstDigit = 7'b1111001;
-                            secondDigit = 7'b1000000;
-                        end
-                            6'd11: begin
-                            firstDigit = 7'b1111001;
-                            secondDigit = 7'b1111001;
-                        end
-                        6'd12: begin
-                            firstDigit = 7'b1111001;
-                            secondDigit = 7'b0100100;
-                        end
-                        6'd13: begin
-                            firstDigit = 7'b1111001;
-                            secondDigit = 7'b0110000;
-                        end
-                        6'd14: begin
-                            firstDigit = 7'b1111001;
-                            secondDigit = 7'b0011001;
-                        end
-                        6'd15: begin
-                            firstDigit = 7'b1111001;
-                            secondDigit = 7'b0010010;
-                        end
-                        6'd16: begin
-                            firstDigit = 7'b1111001;
-                            secondDigit = 7'b0000010;
-                        end
-                        6'd17: begin
-                            firstDigit = 7'b1111001;
-                            secondDigit = 7'b1111000;
-                        end
-                        6'd18: begin
-                            firstDigit = 7'b1111001;
-                            secondDigit = 7'b0000000;
-                        end
-                        6'd19: begin
-                            firstDigit = 7'b1111001;
-                            secondDigit = 7'b0010000;
-                        end
-                        6'd20: begin
-                            firstDigit = 7'b0100100;
-                            secondDigit = 7'b1000000;
-                        end
-                        6'd21: begin
-                            firstDigit = 7'b0100100;
-                            secondDigit = 7'b1111001;
-                        end
-                        6'd22: begin
-                            firstDigit = 7'b0100100;
-                            secondDigit = 7'b0100100;
-                        end
-                        6'd23: begin
-                            firstDigit = 7'b0100100;
-                            secondDigit = 7'b0110000;
-                        end
-                        6'd24: begin
-                            firstDigit = 7'b0100100;
-                            secondDigit = 7'b0011001;
-                        end
-                        6'd25: begin
-                            firstDigit = 7'b0100100;
-                            secondDigit = 7'b0010010;
-                        end
-                        6'd26: begin
-                            firstDigit = 7'b0100100;
-                            secondDigit = 7'b0000010;
-                        end
-                        6'd27: begin
-                            firstDigit = 7'b0100100;
-                            secondDigit = 7'b1111000;
-                        end
-                        6'd28: begin
-                            firstDigit = 7'b0100100;
-                            secondDigit = 7'b0000000;
-                        end
-                        6'd29: begin
-                            firstDigit = 7'b0100100;
-                            secondDigit = 7'b0010000;
-                        end
-                        6'd30: begin
-                            firstDigit = 7'b0110000;
-                            secondDigit = 7'b1000000;
-                        end
-                        6'd31: begin
-                            firstDigit = 7'b0110000;
-                            secondDigit = 7'b1111001;
-                        end
-                        6'd32: begin
-                            firstDigit = 7'b0110000;
-                            secondDigit = 7'b0100100;
-                        end
-                        6'd33: begin
-                            firstDigit = 7'b0110000;
-                            secondDigit = 7'b0110000;
-                        end
-                        6'd34: begin
-                            firstDigit = 7'b0110000;
-                            secondDigit = 7'b0011001;
-                        end
-                        6'd35: begin
-                            firstDigit = 7'b0110000;
-                            secondDigit = 7'b0010010;
-                        end
-                        6'd36: begin
-                            firstDigit = 7'b0110000;
-                            secondDigit = 7'b0000010;
-                        end
-                        6'd37: begin
-                            firstDigit = 7'b0110000;
-                            secondDigit = 7'b1111000;
-                        end
-                        6'd38: begin
-                            firstDigit = 7'b0110000;
-                            secondDigit = 7'b0000000;
-                        end
-                        6'd39: begin
-                            firstDigit = 7'b0110000;
-                            secondDigit = 7'b0010000;
-                        end
-                        6'd40: begin
-                            firstDigit = 7'b0011001;
-                            secondDigit = 7'b1000000;
-                        end
-                        
-                        // Continue with additional cases if needed
-                        default: begin
-                            firstDigit = 7'b0000000;
-                            secondDigit = 7'b0000000;
-                        end
-                    endcase
-                end
+module debounce(input btEntrada, clock, output btSaida);
+    wire enableDoClockLento;
+    wire caso1, caso2, caso2_barrado, caso0, pulso;
+
+    clock_enable u1(clock, enableDoClockLento);
+    FliFlopD d0(clock, enableDoClockLento, btEntrada, caso0);
+    FliFlopD d1(clock, enableDoClockLento, caso0, caso1);
+    FliFlopD d2(clock, enableDoClockLento, caso1, caso2);
+
+    assign caso2_barrado = ~caso2;
+    assign pulso = caso1 & caso2_barrado;
+
+    geradorDePulso pg(clock, pulso, btSaida);
 endmodule
 
-
-
-
-module debounce(input pb_1, clk, output pb_out);
-    wire slow_clk_en;
-    wire Q1, Q2, Q2_bar, Q0, pulse;
-
-    clock_enable u1(clk, slow_clk_en);
-    my_dff_en d0(clk, slow_clk_en, pb_1, Q0);
-    my_dff_en d1(clk, slow_clk_en, Q0, Q1);
-    my_dff_en d2(clk, slow_clk_en, Q1, Q2);
-
-    assign Q2_bar = ~Q2;
-    assign pulse = Q1 & Q2_bar;
-
-    my_pulse_generator pg(clk, pulse, pb_out);
-endmodule
-
-// Slow clock enable for debouncing button 
-module clock_enable(input Clk_100M, output slow_clk_en);
+//de https://www.fpga4student.com/2017/04/simple-debouncing-verilog-code-for.html
+module clock_enable(input clock_100M, output enableDoClockLento);
     reg [26:0] counter = 0;
 
-    always @(posedge Clk_100M) begin
+    always @(posedge clock_100M) begin
         counter <= (counter >= 449999) ? 0 : counter + 1;
     end
 
-    assign slow_clk_en = (counter == 449999) ? 1'b1 : 1'b0;
+    assign enableDoClockLento = (counter == 449999) ? 1'b1 : 1'b0;
 endmodule
 
-// D-flip-flop with clock enable signal for debouncing module 
-module my_dff_en(input DFF_CLOCK, input clock_enable, input D, output reg Q = 0);
+module FliFlopD(input DFF_CLOCK, input clock_enable, input D, output reg Q = 0);
     always @(posedge DFF_CLOCK) begin
         if (clock_enable == 1) 
             Q <= D;
     end
 endmodule
 
-// Pulse generator module
-module my_pulse_generator(input clk, input pulse, output reg pb_out);
-    reg prev_pulse = 0;
+module geradorDePulso(input clock, input pulso, output reg btSaida);
+    reg prev_pulso = 0;
 
-    always @(posedge clk) begin
-        if (pulse && !prev_pulse) begin
-            pb_out <= 1'b1;
+    always @(posedge clock) begin
+        if (pulso && !prev_pulso) begin
+            btSaida <= 1'b1;
         end else begin
-            pb_out <= 1'b0;
+            btSaida <= 1'b0;
         end
-
-        prev_pulse <= pulse;
+        prev_pulso <= pulso;
     end
 endmodule
 
 
-module blackJackStateMachineModule (
-        input clk,
-        input hit,
-        input stay,
-        input reset,
-        output win,
-        output lose,
-        output tie,
-        output reg [5:0] addr,
+module blackJackestadoMachineModule (
+        input clock,
+        input pegarCarta,
+        input ficarCarta,
+        input resetar,
+        output vitoria,
+        output perda,
+        output empate,
+        output reg [5:0] endereco,
         output reg [6:0] SomaDasCartasDoDealer,
         output reg [6:0] SomaDasCartasDoJogador,
         input [3:0] data
     );
-    reg [6:0] SomaDasCartasDoDealerNotVisable;
+    reg [6:0] SomaDasCartasDoDealerNvs;
 
     
-    // Define the state enumeration
+
     localparam
-        ST_IDLE = 6'd0,
+        estadoEspera = 6'd0,
         ST_START =  6'd1,
-        ST_TURN_JOGADOR = 6'd2, 
-        ST_DONE =   6'd3,
-        ST_WIN =   6'd4,   
-        ST_LOSE =  6'd5,
-        ST_SUM_JOGADOR = 6'd6,
-        ST_SUM_DEALER = 6'd7,
-        ST_TURN_DEALER = 6'd8,
-        ST_GIVE_CARD_DEALER = 6'd9,
-        ST_GIVE_CARD_JOGADOR = 6'd10,
-        ST_TIE = 6'd11,
-        ST_GIVE_CARD_DEALER_TWO = 6'd12,
-        ST_GIVE_CARD_JOGADOR_TWO = 6'd13;
+        turnoJogador = 6'd2, 
+        estadoFim =   6'd3,
+        estadoVitoria =   6'd4,   
+        estadoDerrota =  6'd5,
+        estadoSomaCartaJogador = 6'd6,
+        estadoSomaDasCartasDoDealer = 6'd7,
+        turnoBanca = 6'd8,
+        estadoDaCartaBanca = 6'd9,
+        estadoDaCartaJogador = 6'd10,
+        estadoEmpate = 6'd11,
+        estadoDaSegundaCartaBanca = 6'd12,
+        estadoDaSegundaCartaJogador = 6'd13;
 
     
-    reg [6:0] state, next_state;
-    reg [5:0] addr_temp;
+    reg [6:0] estado, proximo_estado;
+    reg [5:0] endereco_temp;
 
-    assign win = (state == ST_WIN) ? 1'b1 : 1'b0;
-    assign lose = (state == ST_LOSE) ? 1'b1 : 1'b0;
-    assign tie = (state == ST_TIE) ? 1'b1 : 1'b0;
+    assign vitoria = (estado == estadoVitoria) ? 1'b1 : 1'b0;
+    assign perda = (estado == estadoDerrota) ? 1'b1 : 1'b0;
+    assign empate = (estado == estadoEmpate) ? 1'b1 : 1'b0;
 
-    always @(posedge clk) begin
-        addr <= addr_temp;
-        state <= next_state;
+    always @(posedge clock) begin
+        endereco <= endereco_temp;
+        estado <= proximo_estado;
 
-        if(reset) begin
-            addr <= 0;
+        if(resetar) begin
+            endereco <= 0;
             SomaDasCartasDoJogador <= 0;
-            SomaDasCartasDoDealerNotVisable <= 0;
+            SomaDasCartasDoDealerNvs <= 0;
             SomaDasCartasDoDealer <= 0;
-            state <= ST_IDLE;
+            estado <= estadoEspera;
         end
-        else if(state == ST_SUM_JOGADOR) begin
+        else if(estado == estadoSomaCartaJogador) begin
             SomaDasCartasDoJogador <= SomaDasCartasDoJogador + data;
         end
-        else if(state == ST_SUM_DEALER) begin
-            SomaDasCartasDoDealerNotVisable <= SomaDasCartasDoDealerNotVisable + data;
+        else if(estado == estadoSomaDasCartasDoDealer) begin
+            SomaDasCartasDoDealerNvs <= SomaDasCartasDoDealerNvs + data;
         end
-        else if(state == ST_GIVE_CARD_DEALER) begin
-            SomaDasCartasDoDealerNotVisable <= SomaDasCartasDoDealerNotVisable + data;
+        else if(estado == estadoDaCartaBanca) begin
+            SomaDasCartasDoDealerNvs <= SomaDasCartasDoDealerNvs + data;
         end
-        else if(state == ST_GIVE_CARD_JOGADOR) begin
+        else if(estado == estadoDaCartaJogador) begin
             SomaDasCartasDoJogador <= SomaDasCartasDoJogador + data;
         end
-        else if(state == ST_GIVE_CARD_DEALER_TWO) begin
-            SomaDasCartasDoDealerNotVisable <= SomaDasCartasDoDealerNotVisable + data;
+        else if(estado == estadoDaSegundaCartaBanca) begin
+            SomaDasCartasDoDealerNvs <= SomaDasCartasDoDealerNvs + data;
         end 
-        else if(state == ST_GIVE_CARD_JOGADOR_TWO) begin
+        else if(estado == estadoDaSegundaCartaJogador) begin
             SomaDasCartasDoJogador <= SomaDasCartasDoJogador + data;
         end
-        else if(state == ST_DONE) begin
-            SomaDasCartasDoDealer = SomaDasCartasDoDealerNotVisable;
+        else if(estado == estadoFim) begin
+            SomaDasCartasDoDealer = SomaDasCartasDoDealerNvs;
         end
-        else if(state == ST_LOSE) begin
-        SomaDasCartasDoDealer = SomaDasCartasDoDealerNotVisable;
+        else if(estado == estadoDerrota) begin
+        SomaDasCartasDoDealer = SomaDasCartasDoDealerNvs;
         end
-        else if(state == ST_WIN) begin
-        SomaDasCartasDoDealer = SomaDasCartasDoDealerNotVisable;
+        else if(estado == estadoVitoria) begin
+        SomaDasCartasDoDealer = SomaDasCartasDoDealerNvs;
         end
-        else if(state == ST_TIE) begin
-            SomaDasCartasDoDealer = SomaDasCartasDoDealerNotVisable;
+        else if(estado == estadoEmpate) begin
+            SomaDasCartasDoDealer = SomaDasCartasDoDealerNvs;
         end
     end
 
     always @* begin
-        // Default values
-        next_state = state;
-        addr_temp = addr;
+    
+        proximo_estado = estado;
+        endereco_temp = endereco;
 
-        case (state)
-            ST_IDLE: begin
-                if (hit) begin
-                    next_state = ST_GIVE_CARD_JOGADOR;
+        case (estado)
+            estadoEspera: begin
+                if (pegarCarta) begin
+                    proximo_estado = estadoDaCartaJogador;
                 end
             end
 
-            ST_GIVE_CARD_JOGADOR: begin
-                next_state = ST_GIVE_CARD_DEALER;
-                addr_temp = addr + 1;
+            estadoDaCartaJogador: begin
+                proximo_estado = estadoDaCartaBanca;
+                endereco_temp = endereco + 1;
             end
 
-            ST_GIVE_CARD_DEALER: begin
-                next_state = ST_GIVE_CARD_DEALER_TWO;
-                addr_temp = addr + 1;
+            estadoDaCartaBanca: begin
+                proximo_estado = estadoDaSegundaCartaBanca;
+                endereco_temp = endereco + 1;
             end
 
-            ST_GIVE_CARD_DEALER_TWO: begin
-                next_state = ST_GIVE_CARD_JOGADOR_TWO;
-                addr_temp = addr +1;
+            estadoDaSegundaCartaBanca: begin
+                proximo_estado = estadoDaSegundaCartaJogador;
+                endereco_temp = endereco +1;
             end
 
-            ST_GIVE_CARD_JOGADOR_TWO: begin
-                next_state = ST_TURN_JOGADOR;
-                addr_temp = addr +1;
+            estadoDaSegundaCartaJogador: begin
+                proximo_estado = turnoJogador;
+                endereco_temp = endereco +1;
             end
 
-            ST_TURN_JOGADOR: begin
+            turnoJogador: begin
                 if(SomaDasCartasDoJogador > 21) begin
-                    next_state = ST_LOSE;
+                    proximo_estado = estadoDerrota;
                 end
-                else if (hit) begin
-                    next_state = ST_SUM_JOGADOR;
-                    addr_temp = addr + 1;
+                else if (pegarCarta) begin
+                    proximo_estado = estadoSomaCartaJogador;
+                    endereco_temp = endereco + 1;
                end 
-               else if (stay) begin
-                    next_state = ST_TURN_DEALER;
+               else if (ficarCarta) begin
+                    proximo_estado = turnoBanca;
                end
             end
 
-            ST_TURN_DEALER: begin
-               if(SomaDasCartasDoDealerNotVisable < 17) begin
-                    next_state = ST_SUM_DEALER;
-                    addr_temp = addr + 1;
+            turnoBanca: begin
+               if(SomaDasCartasDoDealerNvs < 17) begin
+                    proximo_estado = estadoSomaDasCartasDoDealer;
+                    endereco_temp = endereco + 1;
                end
-               else if(SomaDasCartasDoDealerNotVisable > 21) begin
-                    next_state = ST_WIN;
+               else if(SomaDasCartasDoDealerNvs > 21) begin
+                    proximo_estado = estadoVitoria;
                end
-               else if(SomaDasCartasDoDealerNotVisable >= 17 && SomaDasCartasDoDealerNotVisable <= 21) begin
-                    next_state = ST_DONE;
+               else if(SomaDasCartasDoDealerNvs >= 17 && SomaDasCartasDoDealerNvs <= 21) begin
+                    proximo_estado = estadoFim;
                end
             end
 
-            ST_SUM_JOGADOR: begin
-                next_state = ST_TURN_JOGADOR;
+            estadoSomaCartaJogador: begin
+                proximo_estado = turnoJogador;
             end
 
-            ST_SUM_DEALER: begin
-                next_state = ST_TURN_DEALER;
+            estadoSomaDasCartasDoDealer: begin
+                proximo_estado = turnoBanca;
             end
             
-            ST_DONE: begin
+            estadoFim: begin
                 if(SomaDasCartasDoJogador > 21) begin
-                    next_state = ST_LOSE;
+                    proximo_estado = estadoDerrota;
                 end
-                else if(SomaDasCartasDoDealerNotVisable > 21) begin
-                    next_state = ST_WIN;
+                else if(SomaDasCartasDoDealerNvs > 21) begin
+                    proximo_estado = estadoVitoria;
                 end
-                else if(SomaDasCartasDoJogador > SomaDasCartasDoDealerNotVisable) begin
-                    next_state = ST_WIN;
+                else if(SomaDasCartasDoJogador > SomaDasCartasDoDealerNvs) begin
+                    proximo_estado = estadoVitoria;
                 end
-                else if(SomaDasCartasDoJogador < SomaDasCartasDoDealerNotVisable) begin
-                    next_state = ST_LOSE;
+                else if(SomaDasCartasDoJogador < SomaDasCartasDoDealerNvs) begin
+                    proximo_estado = estadoDerrota;
                 end
-                else if(SomaDasCartasDoJogador == SomaDasCartasDoDealerNotVisable) begin
-                    next_state = ST_TIE;
+                else if(SomaDasCartasDoJogador == SomaDasCartasDoDealerNvs) begin
+                    proximo_estado = estadoEmpate;
                 end
             end
 
-            ST_TIE: begin
-                next_state =ST_TIE;
+            estadoEmpate: begin
+                proximo_estado =estadoEmpate;
             end
             
-            ST_WIN: begin
-                next_state = ST_WIN;
+            estadoVitoria: begin
+                proximo_estado = estadoVitoria;
             end
 
-            ST_LOSE: begin
-                next_state = ST_LOSE;
+            estadoDerrota: begin
+                proximo_estado = estadoDerrota;
             end
 
             default: begin
-                next_state = ST_IDLE;
+                proximo_estado = estadoEspera;
             end
         endcase
     end
-endmodule
-
-
-module ddd(
-    input   clk,
-    input   hit,
-    input   stay,
-    input   reset,
-    output wire led1,
-    output wire led2,
-    output wire led3,
-    output  [6:0] firstDigit,
-    output  [6:0] secondDigit,
-    output  [6:0] thirdDigit,
-    output  [6:0] fourthDigit
-);
-
-    wire  [3:0] data;
-    wire  [5:0] addr;
-    wire [6:0] SomaDasCartasDoJogador;
-    wire [6:0] SomaDasCartasDoDealer;
-    wire keyDebouncedHit;
-    wire keyDebouncedStay;
-    wire keyDebouncedReset;
-
-    debounce debounceInst (
-        .clk(clk),
-        .pb_1(hit),
-        .pb_out(keyDebouncedHit)
-    );
-
-    debounce debounceInst2 (
-        .clk(clk),
-        .pb_1(stay),
-        .pb_out(keyDebouncedStay)
-    );
-
-    debounce debounceInst3 (
-        .clk(clk),
-        .pb_1(reset),
-        .pb_out(keyDebouncedReset)
-    );
-    
-    memoryRom rom (
-        .clk(clk),
-        .addr(addr),
-        .data(data),
-    );
-
-    blackJackStateMachineModule blackJackStateMachineInst (
-        .clk(clk),
-        .hit(keyDebouncedHit),
-        .stay(keyDebouncedStay),
-        .reset(keyDebouncedReset),
-        .win(led1),
-        .lose(led2),
-        .tie(led3),
-        .addr(addr),
-        .SomaDasCartasDoJogador(SomaDasCartasDoJogador),
-        .SomaDasCartasDoDealer(SomaDasCartasDoDealer),
-        .data(data)
-    );
-
-    twoSevenSegmentsDisplayModule display1 (
-        .data(SomaDasCartasDoJogador),
-        .firstDigit(firstDigit),
-        .secondDigit(secondDigit),
-    );      
-
-    twoSevenSegmentsDisplayModule display2 (
-        .data(SomaDasCartasDoDealer),
-        .firstDigit(fourthDigit),
-        .secondDigit( thirdDigit),
-    );
 endmodule

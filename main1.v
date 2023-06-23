@@ -283,9 +283,6 @@ module twoSevenSegmentsDisplayModule (
                 end
 endmodule
 
-
-
-
 module debounce(input pb_1, clk, output pb_out);
     wire slow_clk_en;
     wire Q1, Q2, Q2_bar, Q0, pulse;
@@ -301,6 +298,7 @@ module debounce(input pb_1, clk, output pb_out);
     my_pulse_generator pg(clk, pulse, pb_out);
 endmodule
 
+//De https://www.fpga4student.com/2017/04/simple-debouncing-verilog-code-for.html
 // Slow clock enable for debouncing button 
 module clock_enable(input Clk_100M, output slow_clk_en);
     reg [26:0] counter = 0;
