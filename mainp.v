@@ -105,7 +105,6 @@ module twoSevenSegmentsDisplayModule (
             output reg [6:0] firstDigit,
             output reg [6:0] secondDigit
             );
-            
 
                 always @(*) begin
                     case (data)
@@ -428,12 +427,8 @@ module blackJackStateMachineModule (
         case (state)
             ST_IDLE: begin
                 if (hit) begin
-                    next_state = ST_START;
+                    next_state = ST_GIVE_CARD_JOGADOR;
                 end
-            end
-
-            ST_START: begin
-                next_state = ST_GIVE_CARD_JOGADOR;
             end
 
             ST_GIVE_CARD_JOGADOR: begin
