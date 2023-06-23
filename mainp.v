@@ -75,6 +75,8 @@ endmodule
 
 
 
+
+
 module memoria (
             input clock,
             input [5:0] endereco,
@@ -410,4 +412,189 @@ module blackJackestadoMachineModule (
             end
         endcase
     end
+endmodule
+
+
+
+module DisplayDeSeteSegmentosDecodificador (
+            input [6:0]data,
+            output reg [6:0] PrimeiroDigito,
+            output reg [6:0] SegundoDigito
+            );
+            
+
+                always @(*) begin
+                    case (data)
+                        6'd0: begin
+                            firstDigit = 7'b1000000;
+                            secondDigit = 7'b1000000;
+                        end
+                        6'd1: begin
+                            firstDigit = 7'b1000000;
+                            secondDigit = 7'b1111001;
+                        end
+                        6'd2: begin
+                            firstDigit = 7'b1000000;
+                            secondDigit = 7'b0100100;
+                        end
+                        6'd3: begin
+                            firstDigit = 7'b1000000;
+                            secondDigit = 7'b0110000;
+                        end
+                        6'd4: begin
+                            firstDigit = 7'b1000000;
+                            secondDigit = 7'b0011001;
+                        end
+                        6'd5: begin
+                            firstDigit = 7'b1000000;
+                            secondDigit = 7'b0010010;
+                        end
+                        6'd6: begin
+                            firstDigit = 7'b1000000;
+                            secondDigit = 7'b0000010;
+                        end
+                        6'd7: begin
+                            firstDigit = 7'b1000000;
+                            secondDigit = 7'b1111000;
+                        end
+                        6'd8: begin
+                            firstDigit = 7'b1000000;
+                            secondDigit = 7'b0000000;
+                        end
+                        6'd9: begin
+                            firstDigit = 7'b1000000;
+                            secondDigit = 7'b0010000;
+                        end
+                        6'd10: begin
+                            firstDigit = 7'b1111001;
+                            secondDigit = 7'b1000000;
+                        end
+                            6'd11: begin
+                            firstDigit = 7'b1111001;
+                            secondDigit = 7'b1111001;
+                        end
+                        6'd12: begin
+                            firstDigit = 7'b1111001;
+                            secondDigit = 7'b0100100;
+                        end
+                        6'd13: begin
+                            firstDigit = 7'b1111001;
+                            secondDigit = 7'b0110000;
+                        end
+                        6'd14: begin
+                            firstDigit = 7'b1111001;
+                            secondDigit = 7'b0011001;
+                        end
+                        6'd15: begin
+                            firstDigit = 7'b1111001;
+                            secondDigit = 7'b0010010;
+                        end
+                        6'd16: begin
+                            firstDigit = 7'b1111001;
+                            secondDigit = 7'b0000010;
+                        end
+                        6'd17: begin
+                            firstDigit = 7'b1111001;
+                            secondDigit = 7'b1111000;
+                        end
+                        6'd18: begin
+                            firstDigit = 7'b1111001;
+                            secondDigit = 7'b0000000;
+                        end
+                        6'd19: begin
+                            firstDigit = 7'b1111001;
+                            secondDigit = 7'b0010000;
+                        end
+                        6'd20: begin
+                            firstDigit = 7'b0100100;
+                            secondDigit = 7'b1000000;
+                        end
+                        6'd21: begin
+                            firstDigit = 7'b0100100;
+                            secondDigit = 7'b1111001;
+                        end
+                        6'd22: begin
+                            firstDigit = 7'b0100100;
+                            secondDigit = 7'b0100100;
+                        end
+                        6'd23: begin
+                            firstDigit = 7'b0100100;
+                            secondDigit = 7'b0110000;
+                        end
+                        6'd24: begin
+                            firstDigit = 7'b0100100;
+                            secondDigit = 7'b0011001;
+                        end
+                        6'd25: begin
+                            firstDigit = 7'b0100100;
+                            secondDigit = 7'b0010010;
+                        end
+                        6'd26: begin
+                            firstDigit = 7'b0100100;
+                            secondDigit = 7'b0000010;
+                        end
+                        6'd27: begin
+                            firstDigit = 7'b0100100;
+                            secondDigit = 7'b1111000;
+                        end
+                        6'd28: begin
+                            firstDigit = 7'b0100100;
+                            secondDigit = 7'b0000000;
+                        end
+                        6'd29: begin
+                            firstDigit = 7'b0100100;
+                            secondDigit = 7'b0010000;
+                        end
+                        6'd30: begin
+                            firstDigit = 7'b0110000;
+                            secondDigit = 7'b1000000;
+                        end
+                        6'd31: begin
+                            firstDigit = 7'b0110000;
+                            secondDigit = 7'b1111001;
+                        end
+                        6'd32: begin
+                            firstDigit = 7'b0110000;
+                            secondDigit = 7'b0100100;
+                        end
+                        6'd33: begin
+                            firstDigit = 7'b0110000;
+                            secondDigit = 7'b0110000;
+                        end
+                        6'd34: begin
+                            firstDigit = 7'b0110000;
+                            secondDigit = 7'b0011001;
+                        end
+                        6'd35: begin
+                            firstDigit = 7'b0110000;
+                            secondDigit = 7'b0010010;
+                        end
+                        6'd36: begin
+                            firstDigit = 7'b0110000;
+                            secondDigit = 7'b0000010;
+                        end
+                        6'd37: begin
+                            firstDigit = 7'b0110000;
+                            secondDigit = 7'b1111000;
+                        end
+                        6'd38: begin
+                            firstDigit = 7'b0110000;
+                            secondDigit = 7'b0000000;
+                        end
+                        6'd39: begin
+                            firstDigit = 7'b0110000;
+                            secondDigit = 7'b0010000;
+                        end
+                        6'd40: begin
+                            firstDigit = 7'b0011001;
+                            secondDigit = 7'b1000000;
+                        end
+                        
+                        // Continue with additional cases if needed
+                        default: begin
+                            firstDigit = 7'b0000000;
+                            secondDigit = 7'b0000000;
+                        end
+                    endcase
+                end
 endmodule
